@@ -142,34 +142,49 @@ class DataStream:
 
     def register_processor(self, proc: DataProcessor) -> None:
         self.processors.append(proc)
+        print(color.green(f"Registered {type(proc).__name__}"))
 
     def process_stream(self, stream: list[Any]) -> None:
         for item in stream:
             processor_found = False
+
             for proc in self.processors:
                 if proc.validate(item):
                     proc.ingest(item)
                     processor_found = True
                     break
+
             if not processor_found:
-                print(f"Item {
-                    item} does not match any processor's validation criteria")
+                print(
+                    color.red(
+                        f"Item {item} does not match any "
+                        "processor's validation criteria"
+                    )
+                )
 
     def print_processors_stats(self) -> None:
-        if len(self.processors) == 0:
-            print("No processor found, no data")
-        else:
-            for proc in self.processors:
-                total = len(proc.data) + proc.rank
-                print(f"{type(proc).__name__}: total {
-                    total} items processed, remaining {len(proc.data)}")
+        if not self.processors:
+            print(color.red("No processor found, no data"))
+            return
+
+        print(color.magenta("\n=== Processor Statistics ==="))
+
+        for proc in self.processors:
+            total = len(proc.data) + proc.rank
+
+            print(
+                f"{color.magenta(type(proc).__name__)}: "
+                f"{color.blue(f'total {total} items processed')}, "
+                f"{color.green(f'remaining {len(proc.data)}')}"
+            )
 
 
 def main() -> None:
-    print("=== Code Nexus - Data Stream ===")
+    print(color.magenta("=== Code Nexus - Data Stream ==="))
 
     data_stream = DataStream()
-    print("Initialize Data Stream...")
+
+    print(color.blue("Initialize Data Stream..."))
     data_stream.print_processors_stats()
 
     numeric_processor = NumericProcessor()
@@ -193,22 +208,22 @@ def main() -> None:
         ["Hi", "five"]
     ]
 
-    print("Registering Numeric Processor")
+    print(color.blue("Registering Numeric Processor"))
     data_stream.register_processor(numeric_processor)
 
-    print(f"Send first batch of data on stream: {first_batch}")
+    print(color.blue(f"Send first batch of data on stream: {first_batch}"))
     data_stream.process_stream(first_batch)
     data_stream.print_processors_stats()
 
-    print("Registering other data processors")
+    print(color.blue("Registering other data processors"))
     data_stream.register_processor(text_processor)
     data_stream.register_processor(log_processor)
 
-    print("Send the same batch again")
+    print(color.blue("Send the same batch again"))
     data_stream.process_stream(first_batch)
     data_stream.print_processors_stats()
 
-    print("Consume some elements from the data processors")
+    print(color.magenta("\n=== Consume Processor Data ==="))
 
     consumption_counts = [
         (numeric_processor, 3),
@@ -220,12 +235,16 @@ def main() -> None:
         for _ in range(count):
             try:
                 rank, value = processor.output()
+
                 print(
-                    f"{type(processor).__name__} "
-                    f"value {rank}: {value}"
+                    f"{color.magenta(type(processor).__name__)} "
+                    f"{color.blue(f'value {rank}:')} "
+                    f"{color.green(value)}"
                 )
             except IndexError as error:
-                print(f"Could not consume data: {error}")
+                print(
+                    color.red(f"Could not consume data: {error}")
+                )
                 break
 
     data_stream.print_processors_stats()
